@@ -1,0 +1,17 @@
+Notes:
+
+When we copy old exercies directory to another one we need to
+Delete the .git directory in the new one
+Add a new repository 
+Clone teh new repository to new excersie path 
+we add 
+    user.name
+    user.email
+we connect circle ci to our new repository
+We clone Environmental variables
+We add the SSH private key
+We make circleci changes in the .circleci/conf.yml file
+
+
+
+

@@ -1,0 +1,15 @@
+### command
+### $ ansible-playbook -i inventory.txt main-remote.yml --private-key=$HOME/Downloads/DevOps-egfwd.com-ITIDA-Free-Course/PROJECTS/key2-zakarya.pem
+---
+# Exercise for setting up a web server in an EC
+- name: Exercise for setting up a web server in an EC2
+  # Use the public IP if the VM is already created
+  hosts: all
+  # For Ubuntu instances, the user will be `ubuntu`
+  # For Amazon LInux 2 instance, the user will be `ec2-user`
+  user: ubuntu
+  become: true
+  become_method: sudo
+  become_user: root
+  roles:
+    - setup

@@ -1,0 +1,122 @@
+---
+### Template by Zakarya
+### zak3ar@gmail.com
+
+### Commands used 
+### Create the stack
+### $ bash create-stack.sh fast-create-EC2 2services.yaml 2services.json 2
+### Update the stack
+### $ bash update-stack.sh fast-create-EC2 2services.yaml 2services.json 2
+
+### Delete stack
+### $ aws cloudformation delete-stack --stack-name fast-create-EC2 --profile 2
+
+#############################################
+Description:
+  Zakarya-Udacity-Create-SecGroup-EC2
+
+#############################################
+Parameters:
+
+  EnvironmentName:
+    Description: An environment name that will be prefixed to resource names
+    Type: String
+
+  KEY:
+    Description: Existing Key to access the EC2 instance
+    Type: String
+
+  AMI:
+    Description: AMI used with the instance "Amazon Linux 2 AMI (HVM) - Kernel 5.10, SSD Volume Type"
+    Type: String
+
+  INSTANCETYPE:
+    Description: Instance type
+    Type: String
+
+  MyLocalIP:
+    Description: My Current Local IP address
+    Type: String
+
+
+#############################################
+Resources:
+
+  EC2SecGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enable SSH access via port 22 from any IP
+      #GroupName: Sub "${EnvironmentName}EC2SecGroup"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: '-1'
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+      VpcId:
+        Fn::ImportValue:
+          !Sub "${EnvironmentName}-VPCID"
+      Tags:
+      - Key: Name
+        Value: !Sub "${EnvironmentName}-EC2SecGroup"
+
+  EC2Instance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      SecurityGroupIds:
+        - !Ref EC2SecGroup
+      SubnetId: 
+        Fn::ImportValue: !Sub ${EnvironmentName}-PUB-SN-1
+      KeyName:
+        !Ref KEY
+      ImageId:
+        !Ref AMI
+      InstanceType:
+        !Ref INSTANCETYPE
+      Tags:
+      - Key: Name
+        Value: !Sub "${EnvironmentName}-EC2Instance"
+      # UserData:
+      #   Fn::Base64: !Sub |
+      #     #!/bin/bash
+      #     yum update -y
+
+#############################################
+Outputs:
+
+  EC2SecurityGroupID:
+    Description: Security Group ID
+    Value: !Ref EC2SecGroup
+    Export:
+      Name: !Sub "${EnvironmentName}-EC2SecurityGroupID"
+  EC2InstanceId:
+    Description: InstanceId of the newly created EC2 instance
+    Value: !Ref EC2Instance
+    Export:
+      Name: !Sub "${EnvironmentName}-EC2InstanceId"
+  EC2AZ:
+    Description: Availability Zone of the newly created EC2 instance
+    Value: !GetAtt [EC2Instance, AvailabilityZone]
+    Export:
+      Name: !Sub "${EnvironmentName}-EC2AZ"
+  EC2PublicDNS:
+    Description: Public DNSName of the newly created EC2 instance
+    Value: !GetAtt [EC2Instance, PublicDnsName]
+    Export:
+      Name: !Sub "${EnvironmentName}-EC2PublicDNS"
+  EC2PublicIP:
+    Description: Public IP address of the newly created EC2 instance
+    Value: !GetAtt [EC2Instance, PublicIp]
+    Export:
+      Name: !Sub "${EnvironmentName}-EC2PublicIP"
+
+
+

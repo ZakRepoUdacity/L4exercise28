@@ -1,0 +1,27 @@
+[
+	{
+		"ParameterKey": "EnvironmentName",
+		"ParameterValue": "zakarya-devops-course-fast-create-EC2-instance"
+	},
+	{
+		"ParameterKey": "KEY",
+		"ParameterValue": "key2-zakarya"
+	},
+	{
+		"ParameterKey": "AMI",
+		"ParameterValue": "ami-0149b2da6ceec4bb0"
+	},
+	{
+		"ParameterKey": "INSTANCETYPE",
+		"ParameterValue": "t2.micro"
+	},
+	{
+		"ParameterKey": "MyLocalIP",
+		"ParameterValue": "197.135.244.6/32"
+	}
+]
+
+
+
+
+
