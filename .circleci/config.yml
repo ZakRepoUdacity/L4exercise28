@@ -121,7 +121,8 @@ jobs:
             aws cloudformation deploy \
             --template-file create-S3-CF/bucket.yml \
             --stack-name stack-create-bucket-${CIRCLE_WORKFLOW_ID:0:7} \
-            --parameter-overrides MyBucketName="mybucket-${CIRCLE_WORKFLOW_ID:0:7}"
+            --parameter-overrides MyBucketName="mybucket-${CIRCLE_WORKFLOW_ID:0:7}" \ 
+            --region usa-east-1
       - run: aws s3 sync ../create-S3-public_htm-file/ s3://mybucket-${CIRCLE_WORKFLOW_ID:0:7} --delete
 
 # Fetch and save the pipeline ID (bucket ID) responsible for the last release.
@@ -136,6 +137,7 @@ jobs:
           command: |
             aws cloudformation \
             list-exports --query "Exports[?Name==\`PipelineID\`].Value" \
+            --region usa-east-1 \
             --no-paginate --output text > ~/textfile.txt
       - persist_to_workspace:
           root: ~/
