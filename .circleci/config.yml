@@ -123,7 +123,7 @@ jobs:
             --stack-name stack-create-bucket-"${CIRCLE_WORKFLOW_ID:0:7}" \
             --parameter-overrides MyBucketName="mybucket-${CIRCLE_WORKFLOW_ID:0:7}" 
             # --region usa-east-1
-      - run: aws s3 sync create-S3-CF/index.html s3://mybucket-${CIRCLE_WORKFLOW_ID:0:7} --delete
+      - run: aws s3 sync create-public_htm-file-2/ s3://mybucket-${CIRCLE_WORKFLOW_ID:0:7} --delete
 
 # Fetch and save the pipeline ID (bucket ID) responsible for the last release.
   get_last_deployment_id:
