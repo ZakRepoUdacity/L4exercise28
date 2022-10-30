@@ -1,0 +1,58 @@
+---
+### commands
+### Create the stack
+### 
+### delete the stack
+### 
+
+
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Simple cloud formation for bucket creation and configuration
+
+Parameters:
+  BucketName: { Type: String, Default: "zakarya-udacity-exercise" }
+
+Resources:  
+  AccessLogBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      AccessControl: LogDeliveryWrite
+            
+  MainBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: !Ref BucketName
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LoggingConfiguration:
+        DestinationBucketName: !Ref AccessLogBucket
+
+### OR
+# ###Resources:
+#   S3Bucket:
+#     DeletionPolicy: Retain
+#     Type: 'AWS::S3::Bucket'
+#     Description: Creating Amazon S3 bucket from CloudFormation
+#     Properties:
+#       AccessControl: Private
+#       PublicAccessBlockConfiguration:
+#         BlockPublicAcls: true
+#         BlockPublicPolicy: true
+#         IgnorePublicAcls: true
+#         RestrictPublicBuckets: true
+#       BucketEncryption:
+#         ServerSideEncryptionConfiguration:
+#           - ServerSideEncryptionByDefault:
+#               SSEAlgorithm: AES256
+#       VersioningConfiguration:
+#         Status: Enabled
+
+Outputs:
+  MainBucketName:
+    Description: Name of the main bucket
+    Value: !Ref MainBucket
+  LogBucketName:
+    Description: Name of the access log bucket
+    Value: !Ref AccessLogBucket

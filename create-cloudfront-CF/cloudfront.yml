@@ -1,0 +1,52 @@
+---
+
+### Command
+
+### This command need to be modified
+# aws cloudformation deploy \
+# --template-file cloudfront.yml \
+# --stack-name production-distro \
+# --tags project=udapeople \
+# -- region us-east-1 \
+# --parameter-overrides PipelineID="zakarya-udacity-exercise-28" & # Name of the S3 bucket you created manually.
+
+### OR
+
+### Working command
+### $ aws cloudformation deploy --template-file cloudfront.yml --stack-name production-distro --tags project=udapeople --parameter-overrides PipelineID="zakarya-udacity-exercise-28" --profile 2
+
+Parameters:
+  # Existing Bucket name
+  PipelineID:
+    Description: Existing Bucket name
+    Type: String
+
+Resources:
+  CloudFrontOriginAccessIdentity:
+    Type: "AWS::CloudFront::CloudFrontOriginAccessIdentity"
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: Origin Access Identity for Serverless Static Website
+
+  WebpageCDN:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - DomainName: !Sub "${PipelineID}.s3.amazonaws.com"
+            Id: webpage
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}"
+        Enabled: True
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          ForwardedValues:
+            QueryString: False
+          TargetOriginId: webpage
+          ViewerProtocolPolicy: allow-all
+
+Outputs:
+  PipelineID:
+    Value: !Sub ${PipelineID}
+    Export:
+      Name: PipelineID
