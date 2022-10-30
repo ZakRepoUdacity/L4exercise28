@@ -24,22 +24,22 @@ commands:
 jobs:
 
 # 16 Exercise
-  create_infrastructure: 
-      docker:
-        - image: amazon/aws-cli
-      steps:
-        - checkout
-        - run:
-            name: Create Cloudformation Stack
-            command: |
-              # aws cloudformation deploy \
-              #   --template-file template.yml \
-              #   --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:7}
-              #   --region us-east-1
-              aws cloudformation deploy \
-                --template-file template.yml \
-                --stack-name myStack-${CIRCLE_WORKFLOW_ID} \
-                --region us-east-1
+  # create_infrastructure: 
+  #     docker:
+  #       - image: amazon/aws-cli
+  #     steps:
+  #       - checkout
+  #       - run:
+  #           name: Create Cloudformation Stack
+  #           command: |
+  #             # aws cloudformation deploy \
+  #             #   --template-file template.yml \
+  #             #   --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:7}
+  #             #   --region us-east-1
+  #             aws cloudformation deploy \
+  #               --template-file template.yml \
+  #               --stack-name myStack-${CIRCLE_WORKFLOW_ID} \
+  #               --region us-east-1
 
 # 19 Exercise: Config and Deployment
   # configure_infrastructure: 
@@ -81,27 +81,111 @@ jobs:
 
 # 25 Exercise
 # Exercise: Smoke Testing
-  smoke_test:
+  # smoke_test:
+  #   docker:
+  #     - image: amazon/aws-cli
+  #   steps:
+  #     - run:
+  #         name: Test job
+  #         # Fail the job intentionally to simulate an error.
+  #         command:  return 1
+  #     - destroy_environment
+  #         # when: on_fail Already exist in the commands sectoin
+
+
+# workflows:
+#   # Name the workflow
+#   MyWorkflow:
+#     jobs:
+#       - create_infrastructure
+#       # - configure_infrastructure
+#           # requires: [create_infrastructure]
+#       - smoke_test:
+#           requires: [create_infrastructure]
+
+
+
+# 28 Exercise
+# Exercise: Promote to Production
+
+# Executes the bucket.yml - Deploy an S3 bucket, and interface with that bucket to synchronize the files between local and the bucket.
+# Note that the `--parameter-overrides` let you specify a value that override parameter value in the bucket.yml template file.
+  create_and_deploy_front_end:
     docker:
       - image: amazon/aws-cli
     steps:
+      - checkout
       - run:
-          name: Test job
-          # Fail the job intentionally to simulate an error.
-          command:  return 1
-      - destroy_environment
-          # when: on_fail Already exist in the commands sectoin
+          name: Execute bucket.yml - Create Cloudformation Stack
+          command: |
+            aws cloudformation deploy \
+            --template-file create-S3-CF/bucket.yml \
+            --stack-name stack-create-bucket-${CIRCLE_WORKFLOW_ID:0:7} \
+            --parameter-overrides MyBucketName="mybucket-${CIRCLE_WORKFLOW_ID:0:7}"
+      - run: aws s3 sync ../create-S3-public_htm-file/ s3://mybucket-${CIRCLE_WORKFLOW_ID:0:7} --delete
 
+# Fetch and save the pipeline ID (bucket ID) responsible for the last release.
+  get_last_deployment_id:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run: yum install -y tar gzip
+      - run:
+          name: Fetch and save the old pipeline ID (bucket name) responsible for the last release.
+          command: |
+            aws cloudformation \
+            list-exports --query "Exports[?Name==\`PipelineID\`].Value" \
+            --no-paginate --output text > ~/textfile.txt
+      - persist_to_workspace:
+          root: ~/
+          paths: 
+            - textfile.txt 
 
+### $ aws cloudformation list-exports --query "Exports[?Name==\`PipelineID\`].Value" --no-paginate --output text --profile 2
+### zakarya-udacity-exercise-28
 
+# Executes the cloudfront.yml template that will modify the existing CloudFront Distribution, change its target from the old bucket to the new bucket - `mybucket-${CIRCLE_WORKFLOW_ID:0:7}`. 
+# Notice here we use the stack name `production-distro` which is the same name we used while deploying to the S3 bucket manually.
+  promote_to_production:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Execute cloudfront.yml
+          command: |
+            aws cloudformation deploy \
+            --template-file cloudfront.yml \
+            --stack-name production-distro \
+            --parameter-overrides PipelineID="mybucket-${CIRCLE_WORKFLOW_ID:0:7}"
 
+  clean_up_old_front_end:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run: yum install -y tar gzip
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Destroy the previous S3 bucket and CloudFormation stack. 
+          # Use $OldBucketID environment variable or mybucket644752792305 below.
+          # Similarly, you can create and use $OldStackID environment variable in place of production-distro 
+          command: |
+            export OldBucketID=$(cat ~/textfile.txt)
+            aws s3 rm "s3://${OldBucketID}" --recursive
 
 workflows:
   # Name the workflow
   MyWorkflow:
     jobs:
-      - create_infrastructure
-      # - configure_infrastructure
-          # requires: [create_infrastructure]
-      - smoke_test:
-          requires: [create_infrastructure]
+      - create_and_deploy_front_end
+      - get_last_deployment_id
+      - promote_to_production:
+          requires:
+          - create_and_deploy_front_end
+      - clean_up_old_front_end:
+          requires:
+            - get_last_deployment_id
+            - promote_to_production
